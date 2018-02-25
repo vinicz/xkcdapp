@@ -2,9 +2,10 @@ import { call, put, select, takeLatest } from 'redux-saga/effects';
 import { delay } from 'redux-saga';
 import { createActions, handleActions } from 'redux-actions';
 import { actions as metaStateActions } from '../common/MetaStateSagas';
+import { ComicApi } from '../../../api/ComicApi';
 
 const getLastLoadedComicId = state => state.comics.lastLoadedComicId;
-const getComiclist = state => state.comics.comicList;
+const getComicList = state => state.comics.comicList;
 
 const PAGE_SIZE = '10';
 const MAX_LOADED_COMIC = '50';
@@ -32,20 +33,8 @@ export const reducers = handleActions({
   [CLEAR_COMIC_LIST]: () => defaultState,
 }, defaultState);
 
-async function fetchComic(comicId) {
-  const comicIdRequestParameter = comicId ? `${comicId}/` : '';
-  const comicRequest = `https://xkcd.com/${comicIdRequestParameter}info.0.json`;
-  try {
-    const response = await fetch(comicRequest);
-    const responseJson = await response.json();
-    return responseJson;
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-function* loadLatestComicAndGetItsId(newComics) {
-  const latestComic = yield call(fetchComic);
+export function* loadLatestComicAndGetItsId(newComics) {
+  const latestComic = yield call([ComicApi, ComicApi.fetchComic]);
   newComics.push(latestComic);
   return latestComic.num;
 }
@@ -62,7 +51,7 @@ function* loadNextComicsSaga() {
   }
 
   for (let i = lastLoadedComicId - 1; i >= lastLoadedComicId - pageSize; i--) {
-    newComics.push(yield call(fetchComic, i));
+    newComics.push(yield call([ComicApi, ComicApi.fetchComic], i));
   }
 
   yield put(actions.addToComicList(newComics));
@@ -73,7 +62,7 @@ function* loadNextComicsSaga() {
 export function* loadNextComicsIfUnderLimitSaga() {
   // debounce double loading
   yield call(delay, 500);
-  const comicList = yield select(getComiclist);
+  const comicList = yield select(getComicList);
 
   if (comicList.length < MAX_LOADED_COMIC) {
     yield call(loadNextComicsSaga);
