@@ -1,0 +1,13 @@
+{
+  "presets": ["react-native-stage-0/decorator-support"],
+  "plugins": [
+    ["babel-plugin-transform-builtin-extend", {
+      "globals": ["Error"]
+    }]
+  ],
+  "env": {
+    "development": {
+      "plugins": [["flow-react-proptypes", {"ignoreNodeModules": true}]]
+    }
+  }
+}
