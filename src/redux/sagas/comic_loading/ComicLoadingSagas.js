@@ -1,50 +1,92 @@
-import { delay } from 'redux-saga'
-import { put,call, takeEvery } from 'redux-saga/effects'
+import { call, put, select, takeLatest } from 'redux-saga/effects';
+import { delay } from 'redux-saga';
 import { createActions, handleActions } from 'redux-actions';
+import { actions as metaStateActions } from '../common/MetaStateSagas';
 
+const getLastLoadedComicId = state => state.comics.lastLoadedComicId;
+const getComiclist = state => state.comics.comicList;
 
+const PAGE_SIZE = '10';
+const MAX_LOADED_COMIC = '50';
 
-export const LOAD_LATEST_COMIC = 'LOAD_LATEST_COMIC';
-export const SET_LATEST_COMIC = 'SET_LATEST_COMIC';
+export const REFRESH_COMIC_LIST = 'REFRESH_COMIC_LIST';
+export const LOAD_NEXT_COMIC_LIST = 'LOAD_NEXT_COMIC_LIST';
+export const SET_LAST_LOADED_COMIC_ID = 'SET_LAST_LOADED_COMIC_ID';
+export const ADD_TO_COMIC_LIST = 'ADD_TO_COMIC_LIST';
+export const CLEAR_COMIC_LIST = 'CLEAR_COMIC_LIST';
 
 
 export const actions = createActions({
-    [LOAD_LATEST_COMIC]: () => null,
-    [SET_LATEST_COMIC]: (latestComic) => latestComic,
+  [LOAD_NEXT_COMIC_LIST]: () => null,
+  [REFRESH_COMIC_LIST]: () => null,
+  [CLEAR_COMIC_LIST]: () => null,
+  [SET_LAST_LOADED_COMIC_ID]: latestComicId => latestComicId,
+  [ADD_TO_COMIC_LIST]: comicList => comicList,
 });
 
+const defaultState = { comicList: [], meta: { refreshing: false } };
+
 export const reducers = handleActions({
-    [SET_LATEST_COMIC]: (state,action) => {
-        console.log("SET_LATEST_COMIC "+JSON.stringify(action))
-        return {...state,latestComic: action.payload}},
-}, {latestComic : {}});
+  [SET_LAST_LOADED_COMIC_ID]: (state, action) => ({ ...state, lastLoadedComicId: action.payload }),
+  [ADD_TO_COMIC_LIST]: (state, { payload: comicList }) => ({ ...state, comicList: [...state.comicList, ...comicList] }),
+  [CLEAR_COMIC_LIST]: () => defaultState,
+}, defaultState);
 
-
-export function* loadLatestComicSaga() {
-    console.log("loadLatestComicSaga")
-    let latestComic = yield call(fetchLatestComic);
-    yield put(actions.setLatestComic(latestComic));
+async function fetchComic(comicId) {
+  const comicIdRequestParameter = comicId ? `${comicId}/` : '';
+  const comicRequest = `https://xkcd.com/${comicIdRequestParameter}info.0.json`;
+  try {
+    const response = await fetch(comicRequest);
+    const responseJson = await response.json();
+    return responseJson;
+  } catch (error) {
+    console.error(error);
+  }
 }
 
-async function fetchLatestComic(){
-    try {
-        console.log("Fetching newest comic")
-
-        let response = await fetch(
-            'https://xkcd.com/1470/info.0.json'
-        );
-
-        console.log("Fetched newest comic "+JSON.stringify(response))
-        let responseJson = await response.json();
-
-
-        return responseJson;
-    } catch (error) {
-        console.error(error);
-    }
+function* loadLatestComicAndGetItsId(newComics) {
+  const latestComic = yield call(fetchComic);
+  newComics.push(latestComic);
+  return latestComic.num;
 }
 
-// Our watcher Saga: spawn a new incrementAsync task on each INCREMENT_ASYNC
+function* loadNextComicsSaga() {
+  yield put(metaStateActions.startRefreshing());
+  let lastLoadedComicId = yield select(getLastLoadedComicId);
+  const newComics = [];
+  let pageSize = PAGE_SIZE;
+
+  if (!lastLoadedComicId) {
+    pageSize -= 1;
+    lastLoadedComicId = yield call(loadLatestComicAndGetItsId, newComics);
+  }
+
+  for (let i = lastLoadedComicId - 1; i >= lastLoadedComicId - pageSize; i--) {
+    newComics.push(yield call(fetchComic, i));
+  }
+
+  yield put(actions.addToComicList(newComics));
+  yield put(actions.setLastLoadedComicId(newComics[newComics.length - 1].num));
+  yield put(metaStateActions.stopRefreshing());
+}
+
+export function* loadNextComicsIfUnderLimitSaga() {
+  // debounce double loading
+  yield call(delay, 500);
+  const comicList = yield select(getComiclist);
+
+  if (comicList.length < MAX_LOADED_COMIC) {
+    yield call(loadNextComicsSaga);
+  }
+}
+
+
+export function* refreshComicsSaga() {
+  yield put(actions.clearComicList());
+  yield call(loadNextComicsIfUnderLimitSaga);
+}
+
 export function* sagas() {
-    yield takeEvery(LOAD_LATEST_COMIC, loadLatestComicSaga)
+  yield takeLatest(REFRESH_COMIC_LIST, refreshComicsSaga);
+  yield takeLatest(LOAD_NEXT_COMIC_LIST, loadNextComicsIfUnderLimitSaga);
 }

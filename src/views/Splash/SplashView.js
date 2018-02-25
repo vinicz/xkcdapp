@@ -1,74 +1,43 @@
-import React, {PureComponent} from 'react';
-import {Image, View, Text, ImageEditor} from 'react-native';
-import {connect} from 'react-redux';
-import { bindActionCreators } from 'redux';
-import FastImage from 'react-native-fast-image'
-import {actions as comicLoadingActions} from '../../redux/sagas/comic_loading/ComicLoadingSagas'
+import React, { Component } from 'react';
+import { NavigationActions } from 'react-navigation';
+import { connect } from 'react-redux';
+import styled from 'styled-components/native';
 
+const BackgroundView = styled.View`
+  flex: 1;
+  justify-content: flex-end;
+`;
 
-@connect(
-    state => ({
-        latestComic: state.comics.latestComic,
-    }),
-    dispatch => ({
-        loadLatestComic: bindActionCreators(comicLoadingActions.loadLatestComic, dispatch),
-    }),
-)
-export default class SplashView extends PureComponent {
-    state = {
-        imageUri: "",
-    }
+const SplashText = styled.Text`
+  font-size: 24px;
+  color: black
+`;
 
+const kDelayTime = 2000;
 
+@connect()
+export default class SplashView extends Component {
+    static navigationOptions = {
+      header: null,
+    };
 
     componentDidMount() {
-        this.props.loadLatestComic()
-    }
-
-    componentWillReceiveProps(newProps){
-        if(newProps.latestComic.safe_title) {
-
-            const cropData = {
-                offset: {x: 0, y: 0},
-                size: {
-                    height: 200,
-                    width: 300,
-                },
-                resizeMode: 'contain',
-            };
-            ImageEditor.cropImage(
-                newProps.latestComic.img,
-                cropData,
-                (imageUri) => {
-                    this.setState({imageUri});
-                },
-                e => Logger.error(e),
-            );
-        }
+      setTimeout(() => {
+        const resetAction = NavigationActions.reset({
+          index: 0,
+          actions: [
+            NavigationActions.navigate({ routeName: 'ComicListView' }),
+          ],
+        });
+        this.props.navigation.dispatch(resetAction);
+      }, kDelayTime);
     }
 
     render() {
-        console.log("render latestcomic: "+JSON.stringify(this.props.latestComic))
-
-
-
-        if(this.state.imageUri) {
-            return (
-                <View>
-
-                    <Text>{this.props.latestComic.safe_title}</Text>
-                    <Image style={{height:300}} source={{uri: this.state.imageUri}} resizeMode="contain"/>
-                    <FastImage
-                        style={{ height:300}}
-                        source={{
-                            uri: this.props.latestComic.img,
-                        }}
-                        resizeMode={FastImage.resizeMode.contain}
-                    />
-
-                </View>
-            );
-        }
-        return null;
+      return (
+        <BackgroundView>
+          <SplashText>XkcdApp</SplashText>
+        </BackgroundView>
+      );
     }
 }
