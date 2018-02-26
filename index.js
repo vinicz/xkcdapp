@@ -1,14 +1,7 @@
 import {
-    AppRegistry,
-    BackHandler
+  AppRegistry,
 } from 'react-native';
 
-import XkcdApp from './src/MainNavigator'
-
-BackHandler.addEventListener('hardwareBackPress', function() {
-    BackHandler.exitApp()
-
-    return false;
-});
+import XkcdApp from './src/MainNavigator';
 
 AppRegistry.registerComponent('XkcdApp', () => XkcdApp);

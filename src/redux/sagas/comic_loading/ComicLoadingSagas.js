@@ -2,6 +2,7 @@ import { call, put, select, takeLatest } from 'redux-saga/effects';
 import { delay } from 'redux-saga';
 import { createActions, handleActions } from 'redux-actions';
 import { actions as metaStateActions } from '../common/MetaStateSagas';
+import { actions as errorHandlingActions } from '../common/ErrorHandlingSagas';
 import { ComicApi } from '../../../api/ComicApi';
 
 const getLastLoadedComicId = state => state.comics.lastLoadedComicId;
@@ -28,7 +29,7 @@ export const actions = createActions({
 const defaultState = { comicList: [], meta: { refreshing: false } };
 
 export const reducers = handleActions({
-  [SET_LAST_LOADED_COMIC_ID]: (state, action) => ({ ...state, lastLoadedComicId: action.payload }),
+  [SET_LAST_LOADED_COMIC_ID]: (state, { payload: lastLoadedComicId }) => ({ ...state, lastLoadedComicId }),
   [ADD_TO_COMIC_LIST]: (state, { payload: comicList }) => ({ ...state, comicList: [...state.comicList, ...comicList] }),
   [CLEAR_COMIC_LIST]: () => defaultState,
 }, defaultState);
@@ -65,7 +66,11 @@ export function* loadNextComicsIfUnderLimitSaga() {
   const comicList = yield select(getComicList);
 
   if (comicList.length < MAX_LOADED_COMIC) {
-    yield call(loadNextComicsSaga);
+    try {
+      yield call(loadNextComicsSaga);
+    } catch (error) {
+      yield put(errorHandlingActions.showError('Error during loading comics'));
+    }
   }
 }
 
