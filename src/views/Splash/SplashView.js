@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { PureComponent } from 'react';
 import { NavigationActions } from 'react-navigation';
 import { connect } from 'react-redux';
 import styled from 'styled-components/native';
@@ -23,7 +23,7 @@ type SplashViewPropTypes = {
 };
 
 @connect()
-export default class SplashView extends Component {
+export default class SplashView extends PureComponent {
     props: SplashViewPropTypes;
 
     static navigationOptions = {
