@@ -4,9 +4,24 @@ import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import FastImage from 'react-native-fast-image';
 import autobind from 'autobind-decorator';
-import ImageViewer from 'react-native-image-zoom-viewer';
+import styled from 'styled-components/native';
 import { actions as comicLoadingActions } from '../../redux/sagas/comic_loading/ComicLoadingSagas';
 import ComicDetailsView from './ComicDetailsView';
+
+const ComicCellView = styled.View`
+  margin: 5px;
+  backgroundColor: white;
+`;
+
+const ComicCellText = styled.Text`
+  text-align: center;
+  font-size: 24px;
+  padding-bottom: 10px;
+`;
+
+const ComicCellFastImage = styled(FastImage)`
+  height: 200px;
+`;
 
 
 @connect(
@@ -38,16 +53,15 @@ export default class ComicListView extends PureComponent {
     renderLisItem(row) {
       const item = row.item;
       return (
-        <View>
-          <TouchableOpacity onPress={this.onComicSelected.bind(this, item)} >
-            <Text>{item.safe_title}</Text>
-            <FastImage
-              style={{ height: 100 }}
+        <TouchableOpacity onPress={this.onComicSelected.bind(this, item)} >
+          <ComicCellView>
+            <ComicCellText>{item.safe_title}</ComicCellText>
+            <ComicCellFastImage
               source={{ uri: item.img }}
               resizeMode={FastImage.resizeMode.contain}
             />
-          </TouchableOpacity>
-        </View>
+          </ComicCellView>
+        </TouchableOpacity>
       );
     }
 
@@ -57,7 +71,7 @@ export default class ComicListView extends PureComponent {
         <FlatList
           data={this.props.comicList}
           renderItem={this.renderLisItem}
-          keyExtractor={(item, index) => item.num}
+          keyExtractor={(item, index) => item.num.toString()}
           refreshing={this.props.refreshing}
           onRefresh={this.props.refreshComicList}
           onEndReached={this.props.loadNextComicList}

@@ -9,8 +9,10 @@ const BackgroundView = styled.View`
 `;
 
 const SplashText = styled.Text`
-  font-size: 24px;
-  color: black
+  font-size: 40px;
+  color: black;
+  text-align: center;
+  padding-bottom: 200px;
 `;
 
 const kDelayTime = 2000;
