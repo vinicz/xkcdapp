@@ -1,22 +1,16 @@
 import React, { PureComponent } from 'react';
-import { FlatList, Image, Modal, Text, TouchableOpacity, View } from 'react-native';
 import { connect } from 'react-redux';
-import { bindActionCreators } from 'redux';
 import ImageViewer from 'react-native-image-zoom-viewer';
-import { actions as comicLoadingActions } from '../../redux/sagas/comic_loading/ComicLoadingSagas';
 
 
-@connect(
-  state => ({
-    comicList: state.comics.comicList,
-    refreshing: state.meta.refreshing,
-  }),
-  dispatch => ({
-    loadNextComicList: bindActionCreators(comicLoadingActions.loadNextComicList, dispatch),
-    refreshComicList: bindActionCreators(comicLoadingActions.refreshComicList, dispatch),
-  }),
-)
+type ComicDetailsViewPropTypes = {
+    navigation: Object,
+};
+
+@connect()
 export default class ComicDetailsView extends PureComponent {
+    props: ComicDetailsViewPropTypes;
+
     static navigationOptions = ({ navigation }) => {
       const { comic } = navigation.state.params;
 

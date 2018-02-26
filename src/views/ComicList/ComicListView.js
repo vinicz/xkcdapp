@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react';
-import { View, Modal, TouchableOpacity, Text, Button, FlatList } from 'react-native';
+import { View, Modal, TouchableOpacity, Button, FlatList } from 'react-native';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import FastImage from 'react-native-fast-image';
@@ -43,6 +43,16 @@ const ErrorModalText = styled.Text`
   padding-bottom: 10px;
 `;
 
+type ComicListViewPropTypes = {
+    clearError: () => null,
+    refreshComicList: () => null,
+    loadNextComicList: () => null,
+    comicList: Array<Object>,
+    refreshing: Boolean,
+    errorMessage: String,
+    navigation: Object
+};
+
 @connect(
   state => ({
     comicList: state.comics.comicList,
@@ -56,6 +66,8 @@ const ErrorModalText = styled.Text`
   }),
 )
 export default class ComicListView extends PureComponent {
+    props: ComicListViewPropTypes;
+
     static navigationOptions = {
       header: null,
     };
@@ -72,13 +84,14 @@ export default class ComicListView extends PureComponent {
     @autobind
     onErrorModalClosed() {
       this.props.clearError();
+      this.props.loadNextComicList();
     }
 
     @autobind
     renderLisItem(row) {
-      const item = row.item;
+      const { item } = row;
       return (
-        <TouchableOpacity onPress={this.onComicSelected.bind(this, item)} >
+        <TouchableOpacity onPress={() => this.onComicSelected(item)} >
           <ComicCellView>
             <ComicCellText>{item.safe_title}</ComicCellText>
             <ComicCellFastImage
@@ -92,14 +105,12 @@ export default class ComicListView extends PureComponent {
 
 
     render() {
-      console.log(`DEBUGTAG this.props.errorMessag ${this.props.errorMessage}`);
-
       return (
         <View>
           <FlatList
             data={this.props.comicList}
             renderItem={this.renderLisItem}
-            keyExtractor={(item, index) => item.num.toString()}
+            keyExtractor={item => item.num.toString()}
             refreshing={this.props.refreshing}
             onRefresh={this.props.refreshComicList}
             onEndReached={this.props.loadNextComicList}
@@ -114,7 +125,7 @@ export default class ComicListView extends PureComponent {
                 <ErrorModalText>{this.props.errorMessage}</ErrorModalText>
                 <Button
                   onPress={() => this.onErrorModalClosed()}
-                  title="OK"
+                  title="RETRY"
                 />
               </ErrorModalInnerContainer>
             </ErrorModalContainer>

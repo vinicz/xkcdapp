@@ -17,8 +17,15 @@ const SplashText = styled.Text`
 
 const kDelayTime = 2000;
 
+
+type SplashViewPropTypes = {
+    navigation: Object,
+};
+
 @connect()
 export default class SplashView extends Component {
+    props: SplashViewPropTypes;
+
     static navigationOptions = {
       header: null,
     };
